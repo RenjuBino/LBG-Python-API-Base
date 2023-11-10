@@ -116,7 +116,6 @@ def read_all():
 
         # log the items to console
         print(f'Reading items: {serialized_items}')
-        print('I am watching you all time :)')
 
         return json_items, status.HTTP_200_OK
 
