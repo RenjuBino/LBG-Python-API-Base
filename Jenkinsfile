@@ -5,6 +5,7 @@ pipeline {
             steps {
                 sh '''
                 docker build -t renjubino/proj2-app .
+                docker build -t renjubino/proj2-nginx nginx
                 '''
            }
         }
@@ -12,6 +13,7 @@ pipeline {
             steps {
                 sh '''
                 docker push renjubino/proj2-app
+                docker push renjubino/proj2-nginx
                 '''
            }
         }
@@ -22,7 +24,14 @@ pipeline {
                 docker stop project2-app && echo "project2-app is stopped" | echo "project2-app is not running"
                 docker rm project2-app && echo "project2-app is removed" | echo "project2-app is not available"
                 docker pull renjubino/proj2-app
-                docker run -d --name project2-app -p 80:8080 renjubino/proj2-app
+                docker stop project2-nginx && echo "project2-nginx is stopped" | echo "project2-nginx is not running"
+                docker rm project2-nginx && echo "project2-nginx is removed" | echo "project2-nginx is not available"
+                docker pull renjubino/proj2-nginx
+                docker network stop proj2-net && echo "project2-net is stopped" | echo "project2-net is not running"
+                docker network rm proj2-net && echo "project2-net is removed" | echo "project2-net is not available"
+                docker network create proj2-net
+                docker run -d --name project2-app --network proj2-net renjubino/proj2-app
+                docker run -d --name project2-nginx --network proj2-net -p 80:8080 renjubino/proj2-nginx
                 '''
             }
         }
