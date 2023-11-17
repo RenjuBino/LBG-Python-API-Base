@@ -30,7 +30,7 @@ pipeline {
                 docker network rm proj2-net && echo "project2-net is removed" | echo "project2-net is not available"
                 docker network create proj2-net
                 docker run -d --name project2-app --network proj2-net renjubino/proj2-app
-                docker run -d --name project2-nginx --network proj2-net -p 80:8080 renjubino/proj2-nginx
+                docker run -d --name project2-nginx --network proj2-net -p 80:80 renjubino/proj2-nginx
                 '''
             }
         }
