@@ -31,7 +31,7 @@ pipeline {
     stage('template Deployment.yaml'){
         steps{
             sh '''
-                sed -e 's,{{PORT}},'${PORT}',g;' -e 's,{{VERSION}},'${BUILD_NUMBER}',g;' kubernetes/deployment.yaml | kubernetes/deployment.yml
+                sed -e 's,{{PORT}},'${PORT}',g;' -e 's,{{VERSION}},'${BUILD_NUMBER}',g;' kubernetes/deployment.yaml > kubernetes/deployment.yml
                '''
         }
     }
