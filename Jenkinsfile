@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment{
         GCR_CREDENTIALS_ID = 'renju-gcrkey' // The ID you provided in Jenkins credentials
-        IMAGE_NAME = 'renju-lbgpyapi:v2'
+        IMAGE_NAME = 'renju-lbgpyapi'
         GCR_URL = 'eu.gcr.io/lbg-mea-15'
     }
      stages {
