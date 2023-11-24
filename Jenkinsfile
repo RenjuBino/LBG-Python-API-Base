@@ -41,10 +41,7 @@ pipeline {
                 sleep 50
                 gcloud config set account renju-jenkins@lbg-mea-15.iam.gserviceaccount.com
                 export STAGING_IP=\$(kubectl get svc -o json --namespace staging | jq '.items[] | select(.metadata.name == "flask-service") | .status.loadBalancer.ingress[0].ip' | tr -d '"')
-                pip3 install requests
-                pip3 install flask
-                pip3 install flask_api
-                python3 lbg.test.py
+                pip3 install requirements.txt
                 '''
             }
         }
