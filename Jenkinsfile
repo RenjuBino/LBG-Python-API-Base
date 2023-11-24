@@ -1,37 +1,25 @@
 pipeline {
     agent any
-    stages {
-        stage('Build') {
+    environment{
+        GCR_CREDENTIALS_ID = 'renju-gcrkey' // The ID you provided in Jenkins credentials
+        IMAGE_NAME = 'renju-lbgpyapi:v2'
+        GCR_URL = 'eu.gcr.io/lbg-mea-15'
+    }
+     stages {
+        stage('Build and Push to GCR') {
             steps {
-                sh '''
-                docker build -t renjubino/proj2-app .
-                docker build -t renjubino/proj2-nginx nginx
-                '''
-           }
-        }
-        stage('Push') {
-            steps {
-                sh '''
-                docker push renjubino/proj2-app
-                docker push renjubino/proj2-nginx
-                '''
-           }
-        }
-        stage('Deploy') {
-            steps {
-                sh '''
-                ssh jenkins@renju-project2 << EOF
-                docker stop project2-app && echo "project2-app is stopped" | echo "project2-app is not running"
-                docker rm project2-app && echo "project2-app is removed" | echo "project2-app is not available"
-                docker pull renjubino/proj2-app
-                docker stop project2-nginx && echo "project2-nginx is stopped" | echo "project2-nginx is not running"
-                docker rm project2-nginx && echo "project2-nginx is removed" | echo "project2-nginx is not available"
-                docker pull renjubino/proj2-nginx
-                docker network rm proj2-net && echo "project2-net is removed" | echo "project2-net is not available"
-                docker network create proj2-net
-                docker run -d --name project2-app --network proj2-net renjubino/proj2-app
-                docker run -d --name project2-nginx --network proj2-net -p 80:80 renjubino/proj2-nginx
-                '''
+                script {
+                    // Authenticate with Google Cloud
+                    withCredentials([file(credentialsId: GCR_CREDENTIALS_ID, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                        sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                    }
+                    // Configure Docker to use gcloud as a credential helper
+                    sh 'gcloud auth configure-docker --quiet'
+                    // Build the Docker image
+                    sh "docker build -t ${GCR_URL}/${IMAGE_NAME}:${BUILD_NUMBER} ."
+                    // Push the Docker image to GCR
+                    sh "docker push ${GCR_URL}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                }
             }
         }
     }
