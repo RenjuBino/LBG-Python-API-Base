@@ -4,6 +4,11 @@ pipeline {
         GCR_CREDENTIALS_ID = 'renju-gcrkey' // The ID you provided in Jenkins credentials
         IMAGE_NAME = 'renju-lbgpyapi'
         GCR_URL = 'eu.gcr.io/lbg-mea-15'
+        PROJECT_ID = 'lbg-mea-15'
+        CLUSTER_NAME = 'renju-cluster'
+        LOCATION = 'europe-west2-c'
+        CREDENTIALS_ID = '8eafd413-c9cb-40e4-bf33-8b11f2ac97c4'
+
     }
      stages {
         stage('Build and Push to GCR') {
@@ -16,9 +21,17 @@ pipeline {
                     // Configure Docker to use gcloud as a credential helper
                     sh 'gcloud auth configure-docker --quiet'
                     // Build the Docker image
-                    sh "docker build -t ${GCR_URL}/${IMAGE_NAME}:${BUILD_NUMBER} ."
+                    sh "docker build -t ${GCR_URL}/${IMAGE_NAME}:latest ."
                     // Push the Docker image to GCR
-                    sh "docker push ${GCR_URL}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    sh "docker push ${GCR_URL}/${IMAGE_NAME}:latest"
+                }
+            }
+        }
+    stage('Deploy to GKE') {
+            steps {
+                script {
+                    // Deploy to GKE using Jenkins Kubernetes Engine Plugin
+                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, verifyDeployments: true])
                 }
             }
         }
