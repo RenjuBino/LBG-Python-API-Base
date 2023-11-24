@@ -1,6 +1,7 @@
 pipeline {
     agent any
     environment{
+        PORT='8080'
         GCR_CREDENTIALS_ID = 'renju-gcrkey' // The ID you provided in Jenkins credentials
         IMAGE_NAME = 'renju-lbgpyapi'
         GCR_URL = 'eu.gcr.io/lbg-mea-15'
@@ -21,27 +22,33 @@ pipeline {
                     // Configure Docker to use gcloud as a credential helper
                     sh 'gcloud auth configure-docker --quiet'
                     // Build the Docker image
-                    sh "docker build -t ${GCR_URL}/${IMAGE_NAME}:v15 ."
+                    sh "docker build -t ${GCR_URL}/${IMAGE_NAME}:v${BUILD_NUMBER} ."
                     // Push the Docker image to GCR
-                    sh "docker push ${GCR_URL}/${IMAGE_NAME}:v15"
+                    sh "docker push ${GCR_URL}/${IMAGE_NAME}:v${BUILD_NUMBER}"
                 }
             }
         }
+    stage('template Deployment.yaml'){
+        steps{
+            sh '''
+                sed -e 's,{{PORT}},'${PORT}',g;' -e 's,{{VERSION}},'${BUILD_NUMBER}',g;' kubernetes/deployment.yaml | kubernetes/deployment.yml
+               '''
+        }
+    }
     stage('Deploy to staging GKE') {
             steps {
                 script {
                     // Deploy to GKE using Jenkins Kubernetes Engine Plugin
-                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, namespace:'staging', verifyDeployments: true])
+                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yml', credentialsId: env.CREDENTIALS_ID, namespace:'staging', verifyDeployments: true])
                 }
             }
         }
     stage('Quality Check') {
             steps {
                 sh '''
-                sleep 50
                 gcloud config set account renju-jenkins@lbg-mea-15.iam.gserviceaccount.com
                 export STAGING_IP=\$(kubectl get svc -o json --namespace staging | jq '.items[] | select(.metadata.name == "flask-service") | .status.loadBalancer.ingress[0].ip' | tr -d '"')
-                pip3 install /requirements.txt
+                pip3 install -r requirements.txt
                 '''
             }
         }
@@ -49,7 +56,7 @@ pipeline {
             steps {
                 script {
                     // Deploy to GKE using Jenkins Kubernetes Engine Plugin
-                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, namespace:'prod', verifyDeployments: true])
+                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yml', credentialsId: env.CREDENTIALS_ID, namespace:'prod', verifyDeployments: true])
                 }
             }
         }

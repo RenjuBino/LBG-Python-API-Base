@@ -9,7 +9,7 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 8080
+    targetPort: {{PORT}}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -33,7 +33,10 @@ spec:
     spec:
       containers:
       - name: flask-container
-        image: eu.gcr.io/lbg-mea-15/renju-lbgpyapi:v15
+        image: eu.gcr.io/lbg-mea-15/renju-lbgpyapi:v{{VERSION}}
         imagePullPolicy: Always
+        env:
+          - name: PORT
+            value: "{{PORT}}"
         ports:
-        - containerPort: 8080
+        - containerPort: {{PORT}}

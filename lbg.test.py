@@ -8,6 +8,7 @@ For full list of assertions available: https://docs.python.org/3.8/library/unitt
 import unittest
 from lbg import item_builder
 from flask_api import status
+from os import getenv
 import requests
 
 PORT = 8080
