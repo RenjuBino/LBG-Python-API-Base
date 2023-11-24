@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: flask-container
-        image: eu.gcr.io/lbg-mea-15/renju-lbgpyapi:latest
+        image: eu.gcr.io/lbg-mea-15/renju-lbgpyapi:v15
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
