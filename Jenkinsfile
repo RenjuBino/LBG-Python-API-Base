@@ -27,11 +27,29 @@ pipeline {
                 }
             }
         }
-    stage('Deploy to GKE') {
+    stage('Deploy to staging GKE') {
             steps {
                 script {
                     // Deploy to GKE using Jenkins Kubernetes Engine Plugin
-                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, verifyDeployments: true])
+                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, namespace:'staging', verifyDeployments: true])
+                }
+            }
+        }
+    stage('Quality Check') {
+            steps {
+                sh '''
+                sleep 50
+                export STAGING_IP=\$(kubectl get svc -o json --namespace staging | jq '.items[] | select(.metadata.name == "flask-service") | .status.loadBalancer.ingress[0].ip' | tr -d '"')
+                pip3 install requests
+                python3 lbg.test.py
+                '''
+            }
+        }
+    stage('Prod Deploy') {
+            steps {
+                script {
+                    // Deploy to GKE using Jenkins Kubernetes Engine Plugin
+                    step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'kubernetes/deployment.yaml', credentialsId: env.CREDENTIALS_ID, namespace:'prod', verifyDeployments: true])
                 }
             }
         }
